@@ -1,0 +1,48 @@
+#!/usr/bin/python
+
+
+from mods import aircore
+from mods import airstrings
+import os,sys,subprocess
+
+
+
+
+
+
+
+if os.geteuid() != 0:
+   print 'You are not root\nPlease run airfree-wt as root'
+   aircore.ExitAir()
+
+
+try:
+
+   while 1:
+     os.system('clear')
+     print airstrings.welcome
+     #print '\n [1]  AutoDeauth Attack'
+     #print '\n [2]  Update AirFree-WT' 
+     aircore.affiche_menu(airstrings.liste_menu_principal)
+     print '\n [99] Exit Air-Free Wirless Toolkit\n'
+  
+     choix = (raw_input('air> '))
+
+     if choix == 'exit' or choix == '99' or choix == 'quit':
+       aircore.ExitAir()
+       subprocess.Popen('killall python',shell=True).wait()
+  
+
+
+     if choix == '1':
+       try:
+          reload(mods.autoDeauth.autoDeauth)
+       except:
+          import mods.autoDeauth.autoDeauth
+     if choix == '2':
+        aircore.updateAir()
+
+except KeyboardInterrupt:
+
+   print '\nThankyou for using Airfree-WT'
+

